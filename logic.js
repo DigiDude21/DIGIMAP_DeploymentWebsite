@@ -72,7 +72,7 @@ class DenoisementSystem {
         const h = img.length;
         const w = img[0].length;
         const smallWidth = Math.floor(smallWindow / 2);
-        const bigWidth = Math.floor(bigWindow / 2);
+        // const bigWidth = Math.floor(bigWindow / 2); From the original, but unnecessary because the loop changes remain fundamentally the same
     
         const neighbors = [];
     
@@ -135,7 +135,7 @@ class DenoisementSystem {
         return sum;
     }
 
-    static nlMeansDenoise(img, h = 30, smallWindow = 7, bigWindow = 21) {
+    static nlMeansDenoise(img, h = 40, smallWindow = 7, bigWindow = 21) {
         // Padding the original image with reflect mode
         const padImg = this.padImage(img, bigWindow);
 
@@ -208,11 +208,8 @@ class DenoisementSystem {
 
 const imageInput = document.getElementById('imageInput');
 const originalImageContainer = document.getElementById('originalImageContainer');
-const originalImage = document.getElementById('originalImage');
 const saltAndPepperImageContainer = document.getElementById('saltAndPepperImageContainer');
-const saltAndPepperImage = document.getElementById('saltAndPepperImage');
 const gaussianImageContainer = document.getElementById('gaussianImageContainer');
-const gaussianImage = document.getElementById('gaussianImage');
 const nlmSPDenoisedContainer = document.getElementById('nlmSPDenoisedContainer');
 const nlmGaussianDenoisedContainer = document.getElementById('nlmGaussianDenoisedContainer');
 const removeButton = document.getElementById('removeButton');
@@ -222,6 +219,7 @@ imageInput.addEventListener('change', () => {
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
+            clearContainers();
             const img = new Image();
             img.src = e.target.result;
             img.onload = function() {
@@ -241,10 +239,6 @@ imageInput.addEventListener('change', () => {
                     }
                     imgArray[Math.floor(i / 4 / canvas.width)][i / 4 % canvas.width] = avg;
                 }
-
-                originalImage.innerHTML = '';
-                originalImage.appendChild(img);
-                originalImageContainer.style.display = 'block';
 
                 const noisySys = new NoisySystem();
                 const saltAndPepperImg = noisySys.createSaltAndPepperNoise(imgArray);
@@ -278,6 +272,10 @@ imageInput.addEventListener('change', () => {
                     container.appendChild(link);
                 };
 
+                // Display original image
+                createImage(originalImageContainer, imgArray);
+
+                // Noisy images
                 createImage(saltAndPepperImageContainer, saltAndPepperImg);
                 createDownloadLink(saltAndPepperImageContainer, saltAndPepperImg, 'salt_and_pepper_image.jpg');
 
@@ -303,18 +301,33 @@ imageInput.addEventListener('change', () => {
 });
 
 
-
 removeButton.addEventListener('click', () => {
-    originalImage.innerHTML = '';
-    originalImageContainer.style.display = 'none';
-    saltAndPepperImage.innerHTML = '';
-    saltAndPepperImageContainer.style.display = 'none';
-    gaussianImage.innerHTML = '';
-    gaussianImageContainer.style.display = 'none';
-    nlmSPDenoisedContainer.innerHTML = '';
-    nlmSPDenoisedContainer.style.display = 'none';
-    nlmGaussianDenoisedContainer.innerHTML = '';
-    nlmGaussianDenoisedContainer.style.display = 'none';
-    removeButton.style.display = 'none';
-    imageInput.value = ''; // Clear the file input
+    clearContainers();
 });
+
+function clearContainers() {
+    const containers = [originalImageContainer, saltAndPepperImageContainer, gaussianImageContainer, nlmSPDenoisedContainer, nlmGaussianDenoisedContainer];
+
+    containers.forEach(container => {
+        // Hide the container
+        container.style.display = 'none';
+
+        // Remove all child elements except h2 from each container
+        const children = container.childNodes;
+        for (let i = children.length - 1; i >= 0; i--) {
+            const child = children[i];
+            if (child.tagName !== 'H2') {
+                container.removeChild(child);
+            }
+        }
+    });
+
+    // Hide the remove button
+    removeButton.style.display = 'none';
+
+    // Clear the file input
+    imageInput.value = '';
+}
+
+
+
