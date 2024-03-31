@@ -67,54 +67,144 @@ function gaussianRandom(mean, stdDev) {
 class DenoisementSystem {
     constructor() {}
 
-    static nonLocalMeansDenoise(imgData, h = 30, smallWindow = 7, bigWindow = 21) {
-        // Define utility functions
-        const gaussianWeight = (x, y, sigma) => Math.exp(-((x ** 2 + y ** 2) / (2 * (sigma ** 2))));
-
-        // Perform Non-Local Means Denoising
-        const result = imgData.map((row, i) => {
-            return row.map((pixel, j) => {
-                let sumWeights = 0;
-                let weightedSum = 0;
-
-                // Iterate over big window
-                for (let m = -bigWindow / 2; m <= bigWindow / 2; m++) {
-                    for (let n = -bigWindow / 2; n <= bigWindow / 2; n++) {
-                        let sumPixelValues = 0;
-                        let numPixels = 0;
-
-                        // Iterate over small window
-                        for (let x = -smallWindow / 2; x <= smallWindow / 2; x++) {
-                            for (let y = -smallWindow / 2; y <= smallWindow / 2; y++) {
-                                const newX = i + m + x;
-                                const newY = j + n + y;
-
-                                // Check boundary conditions
-                                if (newX >= 0 && newX < imgData.length && newY >= 0 && newY < imgData[0].length) {
-                                    sumPixelValues += imgData[newX][newY];
-                                    numPixels++;
-                                }
-                            }
-                        }
-
-                        // Calculate weight
-                        const weight = gaussianWeight(m, n, h);
-
-                        // Accumulate weighted sum
-                        weightedSum += (weight * sumPixelValues);
-                        sumWeights += weight * numPixels;
+    // Method to find all neighbors for each pixel
+    static findAllNeighbors(img, smallWindow, bigWindow) {
+        const h = img.length;
+        const w = img[0].length;
+        const smallWidth = Math.floor(smallWindow / 2);
+        const bigWidth = Math.floor(bigWindow / 2);
+    
+        const neighbors = [];
+    
+        for (let i = 0; i < h; i++) {
+            const row = [];
+            for (let j = 0; j < w; j++) {
+                const pixelWindow = [];
+                for (let m = -smallWidth; m <= smallWidth; m++) {
+                    const newRow = [];
+                    for (let n = -smallWidth; n <= smallWidth; n++) {
+                        const x = Math.max(0, Math.min(h - 1, i + m));
+                        const y = Math.max(0, Math.min(w - 1, j + n));
+                        newRow.push(img[x][y]);
                     }
+                    pixelWindow.push(newRow);
                 }
+                row.push(pixelWindow);
+            }
+            neighbors.push(row);
+        }
+    
+        return neighbors;
+    }
+    
 
-                // Calculate denoised pixel value
-                const denoisedPixel = weightedSum / sumWeights;
-                return Math.round(denoisedPixel);
-            });
-        });
+    static evaluateNorm(pixelWindow, neighborWindow, Nw) {
+        let Ip_Numerator = 0;
+        let Z = 0;
+    
+        // Iterate over the neighborhood window
+        for (let i = 0; i < neighborWindow.length; i++) {
+            for (let j = 0; j < neighborWindow[0].length; j++) {
+                const q_window = neighborWindow[i][j];
+                const q_x = Math.floor(q_window.length / 2);
+                const q_y = Math.floor(q_window[0].length / 2);
+                const Iq = q_window[q_x][q_y];
+    
+                // Calculate the weight
+                const w = Math.exp(-((this.sumSquaredDifference(pixelWindow, q_window)) / Nw));
+    
+                // Accumulate Ip_Numerator and Z
+                Ip_Numerator += w * Iq;
+                Z += w;
+            }
+        }
+    
+        // Calculate Ip
+        const Ip = Ip_Numerator / Z;
+        return Math.round(Ip); // Round the result to match Python's behavior
+    }
+    
+    // Helper function to calculate the sum of squared differences between two pixel windows
+    static sumSquaredDifference(window1, window2) {
+        let sum = 0;
+        for (let i = 0; i < window1.length; i++) {
+            for (let j = 0; j < window1[0].length; j++) {
+                sum += (window1[i][j] - window2[i][j]) ** 2;
+            }
+        }
+        return sum;
+    }
+
+    static nlMeansDenoise(img, h = 30, smallWindow = 7, bigWindow = 21) {
+        // Padding the original image with reflect mode
+        const padImg = this.padImage(img, bigWindow);
+
+        // Perform NLM denoising
+        const result = this.NLM(padImg, img, h, smallWindow, bigWindow);
 
         return result;
     }
+
+    static padImage(img, bigWindow) {
+        const h = img.length;
+        const w = img[0].length;
+        const padSize = Math.floor(bigWindow / 2);
+
+        const paddedImg = [];
+        for (let i = 0; i < h + 2 * padSize; i++) {
+            const row = [];
+            for (let j = 0; j < w + 2 * padSize; j++) {
+                const x = Math.max(0, Math.min(h - 1, i - padSize));
+                const y = Math.max(0, Math.min(w - 1, j - padSize));
+                row.push(img[x][y]);
+            }
+            paddedImg.push(row);
+        }
+
+        return paddedImg;
+    }
+
+    static NLM(padImg, img, h, smallWindow, bigWindow) {
+        // Calculating neighborhood window
+        const Nw = h ** 2 * smallWindow ** 2;
+
+        // Getting dimensions of the image
+        const hDim = img.length;
+        const wDim = img[0].length;
+
+        // Initializing the result
+        const result = [];
+
+        // Finding width of the neighbor window and padded image from the center pixel
+        const bigWidth = Math.floor(bigWindow / 2);
+
+        // Preprocessing the neighbors of each pixel
+        const neighbors = this.findAllNeighbors(padImg, smallWindow, bigWindow);
+
+        // NL Means algorithm
+        for (let i = bigWidth; i < bigWidth + hDim; i++) {
+            const row = [];
+            for (let j = bigWidth; j < bigWidth + wDim; j++) {
+                // (small_window x small_window) array for pixel p
+                const pixelWindow = neighbors[i][j];
+
+                // (big_window x big_window) pixel neighborhood array for pixel p
+                const neighborWindow = neighbors.slice(i - bigWidth, i + bigWidth + 1).map(row => row.slice(j - bigWidth, j + bigWidth + 1));
+
+                // Calculating Ip using pixelWindow and neighborWindow
+                const Ip = this.evaluateNorm(pixelWindow, neighborWindow, Nw);
+
+                // Clipping the pixel values to stay between 0-255
+                row.push(Math.max(0, Math.min(255, Math.round(Ip))));
+            }
+            result.push(row);
+        }
+
+        return result;
+    }
+    
 }
+
 
 const imageInput = document.getElementById('imageInput');
 const originalImageContainer = document.getElementById('originalImageContainer');
@@ -195,8 +285,8 @@ imageInput.addEventListener('change', () => {
                 createDownloadLink(gaussianImageContainer, gaussianImg, 'gaussian_image.jpg');
 
                 // Perform denoising using Non-Local Means algorithm
-                const denoisedSaltAndPepper = DenoisementSystem.nonLocalMeansDenoise(saltAndPepperImg);
-                const denoisedGaussian = DenoisementSystem.nonLocalMeansDenoise(gaussianImg);
+                const denoisedSaltAndPepper = DenoisementSystem.nlMeansDenoise(saltAndPepperImg);
+                const denoisedGaussian = DenoisementSystem.nlMeansDenoise(gaussianImg);
 
                 // Display denoised images and create download links for them
                 createImage(nlmSPDenoisedContainer, denoisedSaltAndPepper);
