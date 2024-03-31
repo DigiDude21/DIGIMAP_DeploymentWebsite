@@ -64,6 +64,58 @@ function gaussianRandom(mean, stdDev) {
     return num * stdDev + mean;
 }
 
+class DenoisementSystem {
+    constructor() {}
+
+    static nonLocalMeansDenoise(imgData, h = 30, smallWindow = 7, bigWindow = 21) {
+        // Define utility functions
+        const gaussianWeight = (x, y, sigma) => Math.exp(-((x ** 2 + y ** 2) / (2 * (sigma ** 2))));
+
+        // Perform Non-Local Means Denoising
+        const result = imgData.map((row, i) => {
+            return row.map((pixel, j) => {
+                let sumWeights = 0;
+                let weightedSum = 0;
+
+                // Iterate over big window
+                for (let m = -bigWindow / 2; m <= bigWindow / 2; m++) {
+                    for (let n = -bigWindow / 2; n <= bigWindow / 2; n++) {
+                        let sumPixelValues = 0;
+                        let numPixels = 0;
+
+                        // Iterate over small window
+                        for (let x = -smallWindow / 2; x <= smallWindow / 2; x++) {
+                            for (let y = -smallWindow / 2; y <= smallWindow / 2; y++) {
+                                const newX = i + m + x;
+                                const newY = j + n + y;
+
+                                // Check boundary conditions
+                                if (newX >= 0 && newX < imgData.length && newY >= 0 && newY < imgData[0].length) {
+                                    sumPixelValues += imgData[newX][newY];
+                                    numPixels++;
+                                }
+                            }
+                        }
+
+                        // Calculate weight
+                        const weight = gaussianWeight(m, n, h);
+
+                        // Accumulate weighted sum
+                        weightedSum += (weight * sumPixelValues);
+                        sumWeights += weight * numPixels;
+                    }
+                }
+
+                // Calculate denoised pixel value
+                const denoisedPixel = weightedSum / sumWeights;
+                return Math.round(denoisedPixel);
+            });
+        });
+
+        return result;
+    }
+}
+
 const imageInput = document.getElementById('imageInput');
 const originalImageContainer = document.getElementById('originalImageContainer');
 const originalImage = document.getElementById('originalImage');
@@ -71,7 +123,8 @@ const saltAndPepperImageContainer = document.getElementById('saltAndPepperImageC
 const saltAndPepperImage = document.getElementById('saltAndPepperImage');
 const gaussianImageContainer = document.getElementById('gaussianImageContainer');
 const gaussianImage = document.getElementById('gaussianImage');
-const downloadLink = document.getElementById('downloadLink');
+const nlmSPDenoisedContainer = document.getElementById('nlmSPDenoisedContainer');
+const nlmGaussianDenoisedContainer = document.getElementById('nlmGaussianDenoisedContainer');
 const removeButton = document.getElementById('removeButton');
 
 imageInput.addEventListener('change', () => {
@@ -107,7 +160,7 @@ imageInput.addEventListener('change', () => {
                 const saltAndPepperImg = noisySys.createSaltAndPepperNoise(imgArray);
                 const gaussianImg = noisySys.createGaussianNoise(imgArray);
 
-                const createNoisyImage = (container, imgData) => {
+                const createImage = (container, imgData) => {
                     const noisyImgElement = document.createElement('canvas');
                     const noisyContext = noisyImgElement.getContext('2d');
                     noisyImgElement.width = canvas.width;
@@ -124,10 +177,7 @@ imageInput.addEventListener('change', () => {
                     container.style.display = 'block';
                 };
 
-                createNoisyImage(saltAndPepperImageContainer, saltAndPepperImg);
-                createNoisyImage(gaussianImageContainer, gaussianImg);
-
-                // Create download links for modified images
+                // Create download links for noisy images
                 const createDownloadLink = (container, imgData, fileName) => {
                     const link = document.createElement('a');
                     link.href = container.querySelector('canvas').toDataURL();
@@ -138,8 +188,22 @@ imageInput.addEventListener('change', () => {
                     container.appendChild(link);
                 };
 
+                createImage(saltAndPepperImageContainer, saltAndPepperImg);
                 createDownloadLink(saltAndPepperImageContainer, saltAndPepperImg, 'salt_and_pepper_image.jpg');
+
+                createImage(gaussianImageContainer, gaussianImg);
                 createDownloadLink(gaussianImageContainer, gaussianImg, 'gaussian_image.jpg');
+
+                // Perform denoising using Non-Local Means algorithm
+                const denoisedSaltAndPepper = DenoisementSystem.nonLocalMeansDenoise(saltAndPepperImg);
+                const denoisedGaussian = DenoisementSystem.nonLocalMeansDenoise(gaussianImg);
+
+                // Display denoised images and create download links for them
+                createImage(nlmSPDenoisedContainer, denoisedSaltAndPepper);
+                createDownloadLink(nlmSPDenoisedContainer, denoisedSaltAndPepper, 'nlm_salt_and_pepper_denoised_image.jpg');
+
+                createImage(nlmGaussianDenoisedContainer, denoisedGaussian);
+                createDownloadLink(nlmGaussianDenoisedContainer, denoisedGaussian, 'nlm_gaussian_denoised_image.jpg');
 
                 removeButton.style.display = 'inline-block';
             }
@@ -149,6 +213,7 @@ imageInput.addEventListener('change', () => {
 });
 
 
+
 removeButton.addEventListener('click', () => {
     originalImage.innerHTML = '';
     originalImageContainer.style.display = 'none';
@@ -156,7 +221,10 @@ removeButton.addEventListener('click', () => {
     saltAndPepperImageContainer.style.display = 'none';
     gaussianImage.innerHTML = '';
     gaussianImageContainer.style.display = 'none';
-    downloadLink.style.display = 'none';
+    nlmSPDenoisedContainer.innerHTML = '';
+    nlmSPDenoisedContainer.style.display = 'none';
+    nlmGaussianDenoisedContainer.innerHTML = '';
+    nlmGaussianDenoisedContainer.style.display = 'none';
     removeButton.style.display = 'none';
     imageInput.value = ''; // Clear the file input
 });
