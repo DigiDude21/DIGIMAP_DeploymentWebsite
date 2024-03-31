@@ -64,8 +64,70 @@ function gaussianRandom(mean, stdDev) {
     return num * stdDev + mean;
 }
 
+
+function MSE(image1, image2) {
+    let sumSquaredDiff = 0;
+
+    // Assuming both images are of the same dimensions
+    const height = image1.length;
+    const width = image1[0].length;
+
+    for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+            const diff = image1[i][j] - image2[i][j];
+            sumSquaredDiff += diff * diff;
+        }
+    }
+
+    return sumSquaredDiff / (height * width);
+}
+
+
+
 class DenoisementSystem {
     constructor() {}
+
+
+    static nlMeansDenoise(img, h = 20, smallWindow = 7, bigWindow = 21) {
+        // Padding the original image with reflect mode
+        const padImg = this.padImage(img, bigWindow);
+        if (!h) h = 20;
+        // Perform NLM denoising
+        const result = this.NLM(padImg, img, h, smallWindow, bigWindow);
+        return result;
+    }
+
+    static NLM(padImg, img, h, smallWindow, bigWindow) {
+        // Calculating neighborhood window
+        const Nw = h ** 2 * smallWindow ** 2;
+        // Getting dimensions of the image
+        const hDim = img.length;
+        const wDim = img[0].length;
+        // Initializing the result
+        const result = [];
+        // Finding width of the neighbor window and padded image from the center pixel
+        const bigWidth = Math.floor(bigWindow / 2);
+        // Preprocessing the neighbors of each pixel
+        const neighbors = this.findAllNeighbors(padImg, smallWindow, bigWindow);
+        // NL Means algorithm
+        for (let i = bigWidth; i < bigWidth + hDim; i++) {
+            const row = [];
+            for (let j = bigWidth; j < bigWidth + wDim; j++) {
+                // (small_window x small_window) array for pixel p
+                const pixelWindow = neighbors[i][j];
+                // (big_window x big_window) pixel neighborhood array for pixel p
+                const neighborWindow = neighbors.slice(i - bigWidth, i + bigWidth + 1).map(row => row.slice(j - bigWidth, j + bigWidth + 1));
+                // Calculating Ip using pixelWindow and neighborWindow
+                const Ip = this.evaluateNorm(pixelWindow, neighborWindow, Nw);
+                // Clipping the pixel values to stay between 0-255
+                row.push(Math.max(0, Math.min(255, Math.round(Ip))));
+            }
+            result.push(row);
+        }
+        return result;
+    }
+
+
 
     // Method to find all neighbors for each pixel
     static findAllNeighbors(img, smallWindow, bigWindow) {
@@ -118,12 +180,10 @@ class DenoisementSystem {
                 Z += w;
             }
         }
-    
         // Calculate Ip
         const Ip = Ip_Numerator / Z;
         return Math.round(Ip); // Round the result to match Python's behavior
     }
-    
     // Helper function to calculate the sum of squared differences between two pixel windows
     static sumSquaredDifference(window1, window2) {
         let sum = 0;
@@ -134,22 +194,11 @@ class DenoisementSystem {
         }
         return sum;
     }
-
-    static nlMeansDenoise(img, h = 20, smallWindow = 7, bigWindow = 21) {
-        // Padding the original image with reflect mode
-        const padImg = this.padImage(img, bigWindow);
-        if (!h) h = 20;
-        // Perform NLM denoising
-        const result = this.NLM(padImg, img, h, smallWindow, bigWindow);
-
-        return result;
-    }
-
+    
     static padImage(img, bigWindow) {
         const h = img.length;
         const w = img[0].length;
         const padSize = Math.floor(bigWindow / 2);
-
         const paddedImg = [];
         for (let i = 0; i < h + 2 * padSize; i++) {
             const row = [];
@@ -160,47 +209,7 @@ class DenoisementSystem {
             }
             paddedImg.push(row);
         }
-
         return paddedImg;
-    }
-
-    static NLM(padImg, img, h, smallWindow, bigWindow) {
-        // Calculating neighborhood window
-        const Nw = h ** 2 * smallWindow ** 2;
-
-        // Getting dimensions of the image
-        const hDim = img.length;
-        const wDim = img[0].length;
-
-        // Initializing the result
-        const result = [];
-
-        // Finding width of the neighbor window and padded image from the center pixel
-        const bigWidth = Math.floor(bigWindow / 2);
-
-        // Preprocessing the neighbors of each pixel
-        const neighbors = this.findAllNeighbors(padImg, smallWindow, bigWindow);
-
-        // NL Means algorithm
-        for (let i = bigWidth; i < bigWidth + hDim; i++) {
-            const row = [];
-            for (let j = bigWidth; j < bigWidth + wDim; j++) {
-                // (small_window x small_window) array for pixel p
-                const pixelWindow = neighbors[i][j];
-
-                // (big_window x big_window) pixel neighborhood array for pixel p
-                const neighborWindow = neighbors.slice(i - bigWidth, i + bigWidth + 1).map(row => row.slice(j - bigWidth, j + bigWidth + 1));
-
-                // Calculating Ip using pixelWindow and neighborWindow
-                const Ip = this.evaluateNorm(pixelWindow, neighborWindow, Nw);
-
-                // Clipping the pixel values to stay between 0-255
-                row.push(Math.max(0, Math.min(255, Math.round(Ip))));
-            }
-            result.push(row);
-        }
-
-        return result;
     }
     
 }
@@ -287,6 +296,15 @@ imageInput.addEventListener('change', () => {
                 const denoisedSaltAndPepper = DenoisementSystem.nlMeansDenoise(saltAndPepperImg, filterDegree.value);
                 const denoisedGaussian = DenoisementSystem.nlMeansDenoise(gaussianImg, filterDegree.value);
 
+
+                // Calculate the MSE between the original image and the denoised Gaussian image
+                const mseValue = MSE(imgArray, denoisedGaussian);
+
+                // Add MSE value to the container
+                const mseElement = document.createElement('p');
+                mseElement.textContent = `Mean Squared Error: ${mseValue.toFixed(2)}`;
+                nlmGaussianDenoisedContainer.appendChild(mseElement);
+
                 // Display denoised images and create download links for them
                 createImage(nlmSPDenoisedContainer, denoisedSaltAndPepper);
                 createDownloadLink(nlmSPDenoisedContainer, denoisedSaltAndPepper, 'nlm_salt_and_pepper_denoised_image.jpg');
@@ -294,8 +312,15 @@ imageInput.addEventListener('change', () => {
                 createImage(nlmGaussianDenoisedContainer, denoisedGaussian);
                 createDownloadLink(nlmGaussianDenoisedContainer, denoisedGaussian, 'nlm_gaussian_denoised_image.jpg');
 
+
+                
+
                 removeButton.style.display = 'inline-block';
+                
             }
+
+            
+
         }
         reader.readAsDataURL(file);
     }
