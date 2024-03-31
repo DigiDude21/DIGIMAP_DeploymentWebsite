@@ -72,7 +72,7 @@ class DenoisementSystem {
         const h = img.length;
         const w = img[0].length;
         const smallWidth = Math.floor(smallWindow / 2);
-        // const bigWidth = Math.floor(bigWindow / 2); From the original, but unnecessary because the loop changes remain fundamentally the same
+        // const bigWidth = Math.floor(bigWindow / 2); // From the original, but unnecessary because the loop changes remain fundamentally the same
     
         const neighbors = [];
     
@@ -135,10 +135,10 @@ class DenoisementSystem {
         return sum;
     }
 
-    static nlMeansDenoise(img, h = 40, smallWindow = 7, bigWindow = 21) {
+    static nlMeansDenoise(img, h = 20, smallWindow = 7, bigWindow = 21) {
         // Padding the original image with reflect mode
         const padImg = this.padImage(img, bigWindow);
-
+        if (!h) h = 20;
         // Perform NLM denoising
         const result = this.NLM(padImg, img, h, smallWindow, bigWindow);
 
@@ -213,6 +213,7 @@ const gaussianImageContainer = document.getElementById('gaussianImageContainer')
 const nlmSPDenoisedContainer = document.getElementById('nlmSPDenoisedContainer');
 const nlmGaussianDenoisedContainer = document.getElementById('nlmGaussianDenoisedContainer');
 const removeButton = document.getElementById('removeButton');
+const filterDegree = document.getElementById('filterDegree');
 
 imageInput.addEventListener('change', () => {
     const file = imageInput.files[0];
@@ -283,8 +284,8 @@ imageInput.addEventListener('change', () => {
                 createDownloadLink(gaussianImageContainer, gaussianImg, 'gaussian_image.jpg');
 
                 // Perform denoising using Non-Local Means algorithm
-                const denoisedSaltAndPepper = DenoisementSystem.nlMeansDenoise(saltAndPepperImg);
-                const denoisedGaussian = DenoisementSystem.nlMeansDenoise(gaussianImg);
+                const denoisedSaltAndPepper = DenoisementSystem.nlMeansDenoise(saltAndPepperImg, filterDegree.value);
+                const denoisedGaussian = DenoisementSystem.nlMeansDenoise(gaussianImg, filterDegree.value);
 
                 // Display denoised images and create download links for them
                 createImage(nlmSPDenoisedContainer, denoisedSaltAndPepper);
