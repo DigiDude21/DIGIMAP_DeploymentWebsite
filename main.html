@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload and Download</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Image Upload and Download</h1>
+    
+    <!-- Hidden file input and label styled as a button -->
+    <label for="imageInput" class="image-button button">Browse Image</label>
+    <input type="file" id="imageInput" class="image-input" accept="image/*" required>
+
+    <!-- Add a div for displaying time taken -->
+    <div id="processingTime" style="display: none;"></div>
+
+    <button id="removeButton" class="button" style="display: none;">Remove Image</button>
+
+    <div class="image-container" id="originalImageContainer" style="display: none;">
+        <h2>Original Image</h2>
+        <div id="originalImage"></div>
+    </div>
+
+    <!-- Noise Divs -->
+    
+    <div class="image-container" id="saltAndPepperImageContainer" style="display: none;">
+        <h2>Salt and Pepper Noisy Image</h2>
+        <div id="saltAndPepperImage"></div>
+    </div>
+
+    <div class="image-container" id="gaussianImageContainer" style="display: none;">
+        <h2>Gaussian Noisy Image</h2>
+        <div id="gaussianImage"></div>
+    </div>
+
+    <!-- Denoisement Divs -->
+    <div class="image-container" id="standardSaltPepperDenoisedContainer" style="display: none;">
+        <h2>Standard Salt and Pepper Denoised Image</h2>
+        <div id="standardSaltPepperDenoisedImage"></div>
+    </div>
+
+    <div class="image-container" id="standardGaussianDenoisedContainer" style="display: none;">
+        <h2>Standard Gaussian Denoised Image</h2>
+        <div id="standardGaussianDenoisedImage"></div>
+    </div>
+
+    <div class="image-container" id="nlmSPDenoisedContainer" style="display: none;">
+        <h2>Non-Local Means Salt and Pepper Denoised Image</h2>
+        <div id="nlmSPDenoisedImage"></div>
+    </div>
+
+    <div class="image-container" id="nlmGaussianDenoisedContainer" style="display: none;">
+        <h2>Non-Local Means Gaussian Denoised Image</h2>
+        <div id="nlmGaussianDenoisedImage"></div>
+    </div>
+
+    <script src="logic.js"></script>
+</body>
+</html>
