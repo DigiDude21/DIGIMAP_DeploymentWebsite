@@ -5,47 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Denoisement</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
-<body>
-    <h1>Image Denoisement</h1>
+<body class="container">
+    <div class="d-flex flex-column justify-content-center text-center">
+        <h1>
+            Non-local means Denoising
+        </h1>
+        <p>This website simulated Non-local means denoising based on  "A non-local algorithm for image denoising" (2005) by Buades, Coll, and Morel.</p>
+        <p>First, input a filtering degree. A higher degree means more smoothing on the image. Then, upload your chosen image. Please note that the website will look unresponsive while performing the denoising. Larger and colored images will take longer to process.</p>
+        <p>Mean Squared Error values are seen below the denoised images. A low MSE means a denoised image close to the original</p>
+    </div>
     
-    <div>
+    <div class="d-flex flex-row mb-2 mt-5">
+        <label for="filterDegree" class="mr-2 ml-2 align-bottom">Filtering Degree</label>
+        <input type="text" id="filterDegree" placeholder="20" style="max-width: 50px;">
+    </div>
+    <div class="d-flex flex-row">
         <!-- Hidden file input and label styled as a button -->
         <label for="imageInput" class="image-button button">Browse Image</label>
         <input type="file" id="imageInput" class="image-input" accept="image/*" required>
         <!-- Add a div for displaying time taken -->
-        <div id="processingTime" style="display: none;"></div>
+        <!-- <div id="processingTime" style="display: none;"></div> -->
         
-        <button id="removeButton" class="button" style="display: none;">Remove Image</button>
-
-    </div>
-    <div>
-        <label for="filterDegree">Filtering Degree</label>
-        <input type="number" id="filterDegree" placeholder="20" required>
+        <button id="removeButton" class="button ml-3" style="display: none;">Remove Image</button>
     </div>
 
-    
     <div class="image-container" id="originalImageContainer" style="display: none;">
         <h2>Original Image</h2>
     </div>
+    <div class="d-flex flex-row">
+        <!-- Gaussian -->
+        <div class="flex-column">
+            <div class="image-container" id="gaussianImageContainer" style="display: none;">
+                <h2>Gaussian Noisy Image</h2>
+            </div>
+            <div class="image-container" id="nlmGaussianDenoisedContainer" style="display: none;">
+                <h2>Non-Local Means Gaussian Denoised Image</h2>
+            </div>
+        </div>
 
-    <!-- Noise Divs -->
-    
-    <div class="image-container" id="saltAndPepperImageContainer" style="display: none;">
-        <h2>Salt and Pepper Noisy Image</h2>
-    </div>
-
-    <div class="image-container" id="gaussianImageContainer" style="display: none;">
-        <h2>Gaussian Noisy Image</h2>
-    </div>
-
-    <!-- Denoisement Divs -->
-    <div class="image-container" id="nlmSPDenoisedContainer" style="display: none;">
-        <h2>Non-Local Means Salt and Pepper Denoised Image</h2>
-    </div>
-
-    <div class="image-container" id="nlmGaussianDenoisedContainer" style="display: none;">
-        <h2>Non-Local Means Gaussian Denoised Image</h2>
+        <!-- Salt & Pepper -->
+        <div class="flex-column">
+            <div class="image-container" id="saltAndPepperImageContainer" style="display: none;">
+                <h2>Salt and Pepper Noisy Image</h2>
+            </div>
+            <div class="image-container" id="nlmSPDenoisedContainer" style="display: none;">
+                <h2>Non-Local Means Salt and Pepper Denoised Image</h2>
+            </div>
+        </div>
     </div>
 
     <script src="logic.js"></script>

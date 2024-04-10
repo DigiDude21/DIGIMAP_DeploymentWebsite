@@ -296,22 +296,27 @@ imageInput.addEventListener('change', () => {
                 const denoisedSaltAndPepper = DenoisementSystem.nlMeansDenoise(saltAndPepperImg, filterDegree.value);
                 const denoisedGaussian = DenoisementSystem.nlMeansDenoise(gaussianImg, filterDegree.value);
 
-
                 // Calculate the MSE between the original image and the denoised Gaussian image
                 const mseValue = MSE(imgArray, denoisedGaussian);
+                const snpMSEValue = MSE(imgArray, denoisedSaltAndPepper);
 
                 // Add MSE value to the container
                 const mseElement = document.createElement('p');
                 mseElement.textContent = `Mean Squared Error: ${mseValue.toFixed(2)}`;
-                nlmGaussianDenoisedContainer.appendChild(mseElement);
+                const snpMSEElement = document.createElement('p');
+                snpMSEElement.textContent = `Mean Squared Error: ${snpMSEValue.toFixed(2)}`;
 
+                
                 // Display denoised images and create download links for them
                 createImage(nlmSPDenoisedContainer, denoisedSaltAndPepper);
+                nlmSPDenoisedContainer.appendChild(snpMSEElement);
                 createDownloadLink(nlmSPDenoisedContainer, denoisedSaltAndPepper, 'nlm_salt_and_pepper_denoised_image.jpg');
-
+                
                 createImage(nlmGaussianDenoisedContainer, denoisedGaussian);
+                nlmGaussianDenoisedContainer.appendChild(mseElement);
                 createDownloadLink(nlmGaussianDenoisedContainer, denoisedGaussian, 'nlm_gaussian_denoised_image.jpg');
-
+                
+                
 
                 
 
