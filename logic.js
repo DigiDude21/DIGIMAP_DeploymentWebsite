@@ -322,17 +322,9 @@ imageInput.addEventListener('change', () => {
                     // Denoise the image directly without adding noise first
                     const denoisedGaussianDirect = DenoisementSystem.nlMeansDenoise(imgArray, filterDegree.value);
 
-                    // Calculate the MSE between the original image and the directly denoised image
-                    const directMSEValue = MSE(imgArray, denoisedGaussianDirect);
-
-                    // Add MSE value to the container
-                    const directMSEElement = document.createElement('p');
-                    directMSEElement.textContent = `Direct Mean Squared Error: ${directMSEValue.toFixed(2)}`;
-
                     // Display the directly denoised image and create a download link for it
                     createImage(nlmGaussianDirectDenoisedContainer, denoisedGaussianDirect);
-                    nlmGaussianDirectDenoisedContainer.appendChild(directMSEElement);
-                    createDownloadLink(nlmGaussianDirectDenoisedContainer, denoisedGaussianDirect, 'nlm_direct_gaussian_denoised_image.jpg');
+                    createDownloadLink(nlmGaussianDirectDenoisedContainer, denoisedGaussianDirect, 'nlm_denoised_image.jpg');
                     removeButton.style.display = 'inline-block';
                 }
                      
@@ -402,9 +394,11 @@ let processingMode = 'regular'; // Default mode
 
 document.getElementById('inputNoisyImage').addEventListener('click', function() {
     processingMode = 'noisy';
+    clearContainers();
 });
 
 document.getElementById('inputRegularImage').addEventListener('click', function() {
     processingMode = 'regular';
+    clearContainers();
 });
 
