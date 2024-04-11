@@ -14,6 +14,9 @@
             flex-direction: column;
             margin-top: 50px; /* Adjust this value as needed */
         }
+        .image-container {
+            text-align: center;
+        }
     </style>
 </head>
 <body class="container">
@@ -47,20 +50,20 @@
     <div class="d-flex flex-row">
         <!-- Gaussian -->
         <div class="flex-column">
-            <div class="image-container" id="gaussianImageContainer" style="display: none;">
+            <div class="image-container centered-content" id="gaussianImageContainer" style="display: none;">
                 <h2>Gaussian Noisy Image</h2>
             </div>
-            <div class="image-container" id="nlmGaussianDenoisedContainer" style="display: none;">
+            <div class="image-container centered-content" id="nlmGaussianDenoisedContainer" style="display: none;">
                 <h2>Non-Local Means Gaussian Denoised Image</h2>
             </div>
         </div>
 
         <!-- Salt & Pepper -->
         <div class="flex-column">
-            <div class="image-container" id="saltAndPepperImageContainer" style="display: none;">
+            <div class="image-container centered-content" id="saltAndPepperImageContainer" style="display: none;">
                 <h2>Salt and Pepper Noisy Image</h2>
             </div>
-            <div class="image-container" id="nlmSPDenoisedContainer" style="display: none;">
+            <div class="image-container centered-content" id="nlmSPDenoisedContainer" style="display: none;">
                 <h2>Non-Local Means Salt and Pepper Denoised Image</h2>
             </div>
         </div>
