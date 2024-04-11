@@ -37,3 +37,40 @@
 .image-container img {
     margin-right: 20px;
 }
+
+.tabs {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.tab-button {
+    padding: 10px 15px;
+    border: none;
+    background-color: #4CAF50; 
+    cursor: pointer;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+    opacity: 0.5;
+    color: white;
+    border-radius: 5px;
+}
+
+.tab-button:hover,
+.tab-button.active {
+    opacity: 1; 
+}
+
+
+.tab-button.active,
+.tab-button:hover {
+    background-color: #45a049; 
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+

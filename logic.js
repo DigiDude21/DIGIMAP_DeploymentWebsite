@@ -134,7 +134,6 @@ class DenoisementSystem {
         const h = img.length;
         const w = img[0].length;
         const smallWidth = Math.floor(smallWindow / 2);
-        // const bigWidth = Math.floor(bigWindow / 2); // From the original, but unnecessary because the loop changes remain fundamentally the same
     
         const neighbors = [];
     
@@ -221,6 +220,7 @@ const saltAndPepperImageContainer = document.getElementById('saltAndPepperImageC
 const gaussianImageContainer = document.getElementById('gaussianImageContainer');
 const nlmSPDenoisedContainer = document.getElementById('nlmSPDenoisedContainer');
 const nlmGaussianDenoisedContainer = document.getElementById('nlmGaussianDenoisedContainer');
+const nlmGaussianDirectDenoisedContainer = document.getElementById('nlmGaussianDirectDenoisedContainer');
 const removeButton = document.getElementById('removeButton');
 const filterDegree = document.getElementById('filterDegree');
 
@@ -249,10 +249,6 @@ imageInput.addEventListener('change', () => {
                     }
                     imgArray[Math.floor(i / 4 / canvas.width)][i / 4 % canvas.width] = avg;
                 }
-
-                const noisySys = new NoisySystem();
-                const saltAndPepperImg = noisySys.createSaltAndPepperNoise(imgArray);
-                const gaussianImg = noisySys.createGaussianNoise(imgArray);
 
                 const createImage = (container, imgData) => {
                     const noisyImgElement = document.createElement('canvas');
@@ -285,47 +281,62 @@ imageInput.addEventListener('change', () => {
                 // Display original image
                 createImage(originalImageContainer, imgArray);
 
-                // Noisy images
-                createImage(saltAndPepperImageContainer, saltAndPepperImg);
-                createDownloadLink(saltAndPepperImageContainer, saltAndPepperImg, 'salt_and_pepper_image.jpg');
+                if (processingMode === 'regular') {
+                    // Noisy images
+                    const noisySys = new NoisySystem();
+                    const saltAndPepperImg = noisySys.createSaltAndPepperNoise(imgArray);
+                    const gaussianImg = noisySys.createGaussianNoise(imgArray);
 
-                createImage(gaussianImageContainer, gaussianImg);
-                createDownloadLink(gaussianImageContainer, gaussianImg, 'gaussian_image.jpg');
+                    createImage(saltAndPepperImageContainer, saltAndPepperImg);
+                    createDownloadLink(saltAndPepperImageContainer, saltAndPepperImg, 'salt_and_pepper_image.jpg');
 
-                // Perform denoising using Non-Local Means algorithm
-                const denoisedSaltAndPepper = DenoisementSystem.nlMeansDenoise(saltAndPepperImg, filterDegree.value);
-                const denoisedGaussian = DenoisementSystem.nlMeansDenoise(gaussianImg, filterDegree.value);
+                    createImage(gaussianImageContainer, gaussianImg);
+                    createDownloadLink(gaussianImageContainer, gaussianImg, 'gaussian_image.jpg');
 
-                // Calculate the MSE between the original image and the denoised Gaussian image
-                const mseValue = MSE(imgArray, denoisedGaussian);
-                const snpMSEValue = MSE(imgArray, denoisedSaltAndPepper);
+                    // Perform denoising using Non-Local Means algorithm
+                    const denoisedSaltAndPepper = DenoisementSystem.nlMeansDenoise(saltAndPepperImg, filterDegree.value);
+                    const denoisedGaussian = DenoisementSystem.nlMeansDenoise(gaussianImg, filterDegree.value);
 
-                // Add MSE value to the container
-                const mseElement = document.createElement('p');
-                mseElement.textContent = `Mean Squared Error: ${mseValue.toFixed(2)}`;
-                const snpMSEElement = document.createElement('p');
-                snpMSEElement.textContent = `Mean Squared Error: ${snpMSEValue.toFixed(2)}`;
+                    // Calculate the MSE between the original image and the denoised Gaussian image
+                    const mseValue = MSE(imgArray, denoisedGaussian);
+                    const snpMSEValue = MSE(imgArray, denoisedSaltAndPepper);
 
-                
-                // Display denoised images and create download links for them
-                createImage(nlmSPDenoisedContainer, denoisedSaltAndPepper);
-                nlmSPDenoisedContainer.appendChild(snpMSEElement);
-                createDownloadLink(nlmSPDenoisedContainer, denoisedSaltAndPepper, 'nlm_salt_and_pepper_denoised_image.jpg');
-                
-                createImage(nlmGaussianDenoisedContainer, denoisedGaussian);
-                nlmGaussianDenoisedContainer.appendChild(mseElement);
-                createDownloadLink(nlmGaussianDenoisedContainer, denoisedGaussian, 'nlm_gaussian_denoised_image.jpg');
-                
-                
+                    // Add MSE value to the container
+                    const mseElement = document.createElement('p');
+                    mseElement.textContent = `Mean Squared Error: ${mseValue.toFixed(2)}`;
+                    const snpMSEElement = document.createElement('p');
+                    snpMSEElement.textContent = `Mean Squared Error: ${snpMSEValue.toFixed(2)}`;
 
-                
+                    // Display denoised images and create download links for them
+                    createImage(nlmSPDenoisedContainer, denoisedSaltAndPepper);
+                    nlmSPDenoisedContainer.appendChild(snpMSEElement);
+                    createDownloadLink(nlmSPDenoisedContainer, denoisedSaltAndPepper, 'nlm_salt_and_pepper_denoised_image.jpg');
+                    
+                    createImage(nlmGaussianDenoisedContainer, denoisedGaussian);
+                    nlmGaussianDenoisedContainer.appendChild(mseElement);
+                    createDownloadLink(nlmGaussianDenoisedContainer, denoisedGaussian, 'nlm_gaussian_denoised_image.jpg');
+                    removeButton.style.display = 'inline-block';
+                }
 
-                removeButton.style.display = 'inline-block';
-                
+                else if (processingMode === 'noisy'){
+                    // Denoise the image directly without adding noise first
+                    const denoisedGaussianDirect = DenoisementSystem.nlMeansDenoise(imgArray, filterDegree.value);
+
+                    // Calculate the MSE between the original image and the directly denoised image
+                    const directMSEValue = MSE(imgArray, denoisedGaussianDirect);
+
+                    // Add MSE value to the container
+                    const directMSEElement = document.createElement('p');
+                    directMSEElement.textContent = `Direct Mean Squared Error: ${directMSEValue.toFixed(2)}`;
+
+                    // Display the directly denoised image and create a download link for it
+                    createImage(nlmGaussianDirectDenoisedContainer, denoisedGaussianDirect);
+                    nlmGaussianDirectDenoisedContainer.appendChild(directMSEElement);
+                    createDownloadLink(nlmGaussianDirectDenoisedContainer, denoisedGaussianDirect, 'nlm_direct_gaussian_denoised_image.jpg');
+                    removeButton.style.display = 'inline-block';
+                }
+                     
             }
-
-            
-
         }
         reader.readAsDataURL(file);
     }
@@ -337,7 +348,7 @@ removeButton.addEventListener('click', () => {
 });
 
 function clearContainers() {
-    const containers = [originalImageContainer, saltAndPepperImageContainer, gaussianImageContainer, nlmSPDenoisedContainer, nlmGaussianDenoisedContainer];
+    const containers = [originalImageContainer, saltAndPepperImageContainer, gaussianImageContainer, nlmSPDenoisedContainer, nlmGaussianDenoisedContainer, nlmGaussianDirectDenoisedContainer];
 
     containers.forEach(container => {
         // Hide the container
@@ -361,4 +372,39 @@ function clearContainers() {
 }
 
 
+// Website Style Scripts
+
+function changeTab(event, tabName) {
+    
+    // Remove 'active' class from all tabs
+    var tabButtons = document.getElementsByClassName("tab-button");
+    for (var i = 0; i < tabButtons.length; i++) {
+        tabButtons[i].className = tabButtons[i].className.replace(" active", "");
+    }
+
+    // Add 'active' class to the clicked tab
+    event.currentTarget.className += " active";
+
+    // Optional: Handle tab content visibility here if needed
+    // Example: Hide all content first
+    var tabContents = document.getElementsByClassName("tab-content");
+    for (var i = 0; i < tabContents.length; i++) {
+        tabContents[i].style.display = "none";
+    }
+    // Then, show the content related to the active tab
+    var activeTabContent = document.getElementById(tabName);
+    if (activeTabContent) {
+        activeTabContent.style.display = "block";
+    }
+}
+
+let processingMode = 'regular'; // Default mode
+
+document.getElementById('inputNoisyImage').addEventListener('click', function() {
+    processingMode = 'noisy';
+});
+
+document.getElementById('inputRegularImage').addEventListener('click', function() {
+    processingMode = 'regular';
+});
 

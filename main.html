@@ -10,11 +10,16 @@
 <body class="container">
     <div class="d-flex flex-column justify-content-center text-center">
         <h1>
-            Non-local means Denoising
+            Non-local Means Denoising
         </h1>
         <p>This website simulated Non-local means denoising based on  "A non-local algorithm for image denoising" (2005) by Buades, Coll, and Morel.</p>
         <p>First, input a filtering degree. A higher degree means more smoothing on the image. Then, upload your chosen image. Please note that the website will look unresponsive while performing the denoising. Larger and colored images will take longer to process.</p>
         <p>Mean Squared Error values are seen below the denoised images. A low MSE means a denoised image close to the original</p>
+    </div>
+
+    <div class="tabs">
+        <button id="inputRegularImage" class="tab-button active" onclick="changeTab(event, 'regular')">Input Regular Image</button>
+        <button id="inputNoisyImage" class="tab-button" onclick="changeTab(event, 'noisy')">Input Noisy Image</button>
     </div>
     
     <div class="d-flex flex-row mb-2 mt-5">
@@ -52,6 +57,13 @@
             </div>
             <div class="image-container" id="nlmSPDenoisedContainer" style="display: none;">
                 <h2>Non-Local Means Salt and Pepper Denoised Image</h2>
+            </div>
+        </div>
+
+        <!-- Direct -->
+        <div class="flex-column">
+            <div class="image-container" id="nlmGaussianDirectDenoisedContainer" style="display: none;">
+                <h2>Non-Local Means Denoised Image</h2>
             </div>
         </div>
     </div>
