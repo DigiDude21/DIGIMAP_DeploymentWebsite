@@ -308,12 +308,12 @@ imageInput.addEventListener('change', () => {
                     snpMSEElement.textContent = `Mean Squared Error: ${snpMSEValue.toFixed(2)}`;
 
                     // Display denoised images and create download links for them
-                    createImage(nlmSPDenoisedContainer, denoisedSaltAndPepper);
                     nlmSPDenoisedContainer.appendChild(snpMSEElement);
+                    createImage(nlmSPDenoisedContainer, denoisedSaltAndPepper);
                     createDownloadLink(nlmSPDenoisedContainer, denoisedSaltAndPepper, 'nlm_salt_and_pepper_denoised_image.jpg');
                     
-                    createImage(nlmGaussianDenoisedContainer, denoisedGaussian);
                     nlmGaussianDenoisedContainer.appendChild(mseElement);
+                    createImage(nlmGaussianDenoisedContainer, denoisedGaussian);
                     createDownloadLink(nlmGaussianDenoisedContainer, denoisedGaussian, 'nlm_gaussian_denoised_image.jpg');
                     removeButton.style.display = 'inline-block';
                 }
